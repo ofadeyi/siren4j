@@ -6,6 +6,8 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
+
+import com.google.common.collect.Lists;
 import org.apache.commons.collections.MapUtils;
 import org.apache.commons.lang.StringUtils;
 import org.reflections.Reflections;
@@ -126,7 +128,7 @@ public class ResourceRegistryImpl implements ResourceRegistry {
         LOG.info("Siren4J scanning classpath for resource entries...");
         Reflections reflections = null;
         ConfigurationBuilder builder = new ConfigurationBuilder();
-        Collection<URL> urls = new HashSet<URL>();
+        Collection<URL> urls = Lists.newArrayList();
         if (packages != null && packages.length > 0) {
             //limit scan to packages            
             for (String pkg : packages) {
@@ -147,12 +149,14 @@ public class ResourceRegistryImpl implements ResourceRegistry {
         Set<Class<?>> types = reflections.getTypesAnnotatedWith(Siren4JEntity.class);
         for (Class<?> c : types) {
             Siren4JEntity anno = c.getAnnotation(Siren4JEntity.class);
-            String name = StringUtils
-                    .defaultIfBlank(anno.name(), anno.entityClass().length > 0 ? anno.entityClass()[0] : c.getName());
-            putEntry(StringUtils.defaultIfEmpty(name, c.getName()), c, false);
-            // Always add the class name as an entry in the index if it does not already exist.
-            if (!containsEntityEntry(c.getName())) {
-                putEntry(StringUtils.defaultIfEmpty(c.getName(), c.getName()), c, false);
+            if (anno != null) {
+                String name = StringUtils
+                        .defaultIfBlank(anno.name(), anno.entityClass().length > 0 ? anno.entityClass()[0] : c.getName());
+                putEntry(StringUtils.defaultIfEmpty(name, c.getName()), c, false);
+                // Always add the class name as an entry in the index if it does not already exist.
+                if (!containsEntityEntry(c.getName())) {
+                    putEntry(StringUtils.defaultIfEmpty(c.getName(), c.getName()), c, false);
+                }
             }
         }
     }

@@ -69,12 +69,16 @@ public class ReflectingConverterTest {
 
         Entity ent = ReflectingConverter.newInstance().toEntity(getTestCourse());
         String there = ent.toString();
-        
-        
+
         ObjectMapper mapper = new ObjectMapper();
         mapper.configure(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS, false);
         Entity back = mapper.readValue(there, Entity.class);
         assertEquals(ent.toString(), back.toString());
+
+        ResourceRegistry reg = ResourceRegistryImpl.newInstance("com.google.code.siren4j");
+        Course result = (Course)ReflectingConverter.newInstance(reg).toObject(back);
+        System.out.println("ToResource: ");
+        System.out.println(ReflectingConverter.newInstance().toEntity((Course)result).toString());
     }
     
     @Test

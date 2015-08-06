@@ -37,6 +37,7 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 import java.util.regex.Matcher;
 
+import com.google.common.base.Optional;
 import org.apache.commons.lang.ArrayUtils;
 import org.apache.commons.lang.StringUtils;
 import com.google.code.siren4j.annotations.Siren4JProperty;
@@ -73,6 +74,8 @@ public class ReflectionUtils {
             boolean.class, Boolean.class, String.class, Date.class, int[].class, Integer[].class, long[].class, Long[].class,
             double[].class, Double[].class, float[].class, Float[].class, short[].class, Short[].class, byte[].class, Byte[].class,
             boolean[].class, Boolean[].class, String[].class, Date[].class, BigDecimal.class, BigInteger.class};
+
+    private FieldValueContext fieldValueContext;
 
     private ReflectionUtils() {
 
@@ -488,7 +491,13 @@ public class ReflectionUtils {
             Method setter = info.getSetter();
             setter.setAccessible(true);
             try {
-                setter.invoke(obj, new Object[]{value});
+                //setter.invoke(obj, new Object[]{value});
+                Optional<Object>  convertedValue = fromMethodParameterType(setter, value);
+                if (!convertedValue.isPresent()) {
+                    setter.invoke(obj, new Object[]{value});
+                    return;
+                }
+                setter.invoke(obj, new Object[]{convertedValue.get()});
             } catch (Exception e) {
                 throw new Siren4JException(e);
             }
@@ -500,7 +509,15 @@ public class ReflectionUtils {
                 throw new Siren4JException(e);
             }
         }
+    }
 
+    //TODO:
+    private static Optional<Object> fromMethodParameterType(Method setter, Object value){
+        if ( (!ArrayUtils.contains(propertyTypes, setter.getParameterTypes()[0])) &&
+                (!Enum.class.isAssignableFrom(setter.getParameterTypes()[0])) ) {
+            return Optional.absent();
+        }
+        return ShortFieldValueContext.newInstance().get(setter.getParameterTypes()[0], value);
     }
 
 
